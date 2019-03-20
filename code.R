@@ -25,8 +25,8 @@ dataExport <- dataImport %>% filter(dataImport$Item != "NONE" & dataImport$Item 
 dataExportNoCoffee <- dataImport %>% filter(!(dataImport$Item %in% c("NONE", "Adjustment", "Coffee", "Bread", "Postcard")))
 
 # Write only the relevant columns
-write.csv(dataExport[, c(3:4)], './data/transactions.csv')
-write.csv(dataExportNoCoffee[, c(3:4)], './data/transactionsNoCoffee.csv')
+dataExport[, c(3:4)] %>% write.csv( './data/transactions.csv')
+dataExportNoCoffee[, c(3:4)] %>% write.csv( './data/transactionsNoCoffee.csv')
 
 # Read the data as transactions
 coffee <- read.transactions('data/transactions.csv', 
@@ -64,9 +64,9 @@ teaChi <- tea %>% crossTable(measure="chiSquared", sort=TRUE)
 
 # p-value of test, H0:independent rows and columns
 teaCount[1:8,1:6]
-print(teaSupport[1:8,1:6], digits = 1)
-print(teaLift[1:8,1:6], digits = 2)
-print(teaChi[1:8,1:6], digits = 1)
+teaSupport[1:8,1:6] %>% print(digits = 1)
+teaLift[1:8,1:6] %>% print(digits = 2)
+teaChi[1:8,1:6] %>% print(digits = 1)
 
 ############# Eclat
 
