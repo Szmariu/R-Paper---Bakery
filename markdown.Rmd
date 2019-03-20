@@ -1,0 +1,296 @@
+---
+title: Would You Like a Cookie With That Coffee? A Basket Analisys on Data From a
+  Bakery
+author: "Michał Szałański"
+date: "20 marca 2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(comment=NA)
+knitr::opts_chunk$set(fig.align='left')
+```
+
+```{r, Libraries, message = FALSE, warning = FALSE}
+library(tibble)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(gridExtra)
+library(knitr)
+library(arules)
+library(arulesViz)
+library(arulesCBA)
+library(arulesSequences)
+library(knitr)
+library(reshape)
+options(scipen=999)
+
+# Nice colors
+cYellow = '#FADA5E'
+cBlue = '#378CC7'
+```
+
+```{r, eval=FALSE}
+# Read the data
+dataImport <- read.csv('data/teaBasket_DMS.csv')
+
+# Remove transactions with NONE and Adjustment
+dataExport <- dataImport %>% filter(dataImport$Item != "NONE" & dataImport$Item != "Adjustment")
+
+# Remove two most frequent items 
+dataExportNoCoffee <- dataImport %>% filter(!(dataImport$Item %in% c("NONE", "Adjustment", "Coffee", "Bread", "Postcard")))
+
+# Write only the relevant columns
+dataExport[, c(3:4)] %>% write.csv( './data/transactions.csv')
+dataExportNoCoffee[, c(3:4)] %>% write.csv( './data/transactionsNoCoffee.csv')
+```
+
+```{r}
+# Read the data as transactions
+coffee <- read.transactions('./data/transactions.csv', 
+                           format="single", 
+                           cols = c('Transaction', 'Item'), 
+                           sep = ',', 
+                           header = TRUE)
+
+tea <- read.transactions('./data/transactionsNoCoffee.csv', 
+                            format="single", 
+                            cols = c('Transaction', 'Item'), 
+                            sep = ',', 
+                            header = TRUE)
+```
+
+# With coffee
+
+```{r}
+coffee
+```
+
+```{r}
+image(coffee[1000:1200])
+```
+
+```{r}
+coffee %>% itemFrequencyPlot(topN=15,
+                             type="absolute", 
+                             main="Item Absolute Frequency", 
+                             col = cYellow, 
+                             border = NA)
+```
+
+```{r}
+coffee %>% itemFrequencyPlot(topN=15,
+                             type="relative", 
+                             main="Item Relative Frequency",
+                             col = cBlue, 
+                             border = NA) 
+```
+
+# Without coffee and bread
+
+```{r}
+tea
+```
+
+```{r}
+image(tea[1000:1200])
+```
+
+```{r}
+tea %>% itemFrequencyPlot(topN=15,
+                          type="relative", 
+                          main="Item Relative Frequency - without coffee and bread",
+                          col = cBlue,
+                          border = NA) 
+```
+
+
+
+############## Cross tables
+
+```{r}
+coffeeCount <- coffee %>% crossTable(measure="count", sort=TRUE)
+teaCount <- tea %>% crossTable(measure="count", sort=TRUE)
+```
+
+```{r}
+coffeeCount[1:8,1:6] %>% kable()
+coffeeCount[1,1]
+coffeeCount[2,2]
+```
+
+```{r}
+teaSupport <- tea %>% crossTable(measure="support", sort=TRUE)
+teaLift <- tea %>% crossTable(measure="lift", sort=TRUE)
+```
+
+```{r, message = FALSE}
+teaSupport[1:8,1:6] %>% kable()
+```
+
+```{r}
+teaLift[1:8,1:6] %>% kable()
+```
+
+############# Eclat
+# Low support still gives items that have at least ~ 8 occurences
+```{r}
+teaFreqItems <- tea %>% eclat(list(supp=0.0003, maxlen=4)) 
+median(teaFreqItems@quality$count)
+```
+
+```{r}
+teaFreqRules <- teaFreqItems %>% ruleInduction(tea, confidence=0.4)
+teaFreqRules
+```
+
+```{r, results='hide'}
+a <- teaFreqRules %>% 
+  head(10) %>% 
+  inspect(ruleSep = ">>>", itemSep = " + ", setStart = "", setEnd ="") %>% 
+  as.data.frame()
+```
+
+```{r}
+kable(a)
+```
+
+
+## Apriori
+
+```{r, results='hide'}
+b <- tea %>% 
+  apriori(list(supp=0.0004, conf=0.3), control=list(verbose=F)) %>% 
+  sort(by="lift", decreasing=TRUE) %>% 
+  head(10) %>%
+  inspect(ruleSep = ">>>", itemSep = " + ", setStart = "", setEnd ="") %>% 
+  as.data.frame()
+```
+
+```{r}
+kable(b)
+```
+
+## LHS
+### Coffee
+
+```{r, results='hide'}
+c <- coffee %>% 
+  apriori(list(supp=0.001,conf = 0.10),
+          appearance=list(default="lhs", rhs="Coffee"),
+          control=list(verbose=F)) %>%
+  sort(by="confidence", decreasing=TRUE) %>%
+  head(10) %>%
+  inspect(ruleSep = ">>>", itemSep = " + ", setStart = "", setEnd ="") %>% 
+  as.data.frame()
+```
+
+```{r}
+kable(c)
+```
+
+### Bread
+
+```{r, results='hide'}
+d <- coffee %>% 
+  apriori(list(supp=0.001,conf = 0.10),
+          appearance=list(default="lhs", rhs="Bread"),
+          control=list(verbose=F)) %>%
+  sort(by="confidence", decreasing=TRUE) %>%
+  head(10) %>%
+  inspect(ruleSep = ">>>", itemSep = " + ", setStart = "", setEnd ="") %>% 
+  as.data.frame()
+```
+
+```{r}
+kable(d)
+```
+
+## RHS
+### Coffee
+```{r, results='hide'}
+e <- coffee %>% 
+  apriori(list(supp=0.001,conf = 0.05),
+          appearance=list(default="rhs", lhs="Coffee"),
+          control=list(verbose=F)) %>%
+  sort(by="confidence", decreasing=TRUE) %>%
+  head(10) %>%
+  inspect(ruleSep = ">>>", itemSep = " + ", setStart = "", setEnd ="") %>% 
+  as.data.frame()
+```
+
+```{r}
+kable(e)
+```
+
+### Bread
+
+```{r, results='hide'}
+f <- coffee %>% 
+  apriori(list(supp=0.001,conf = 0.05),
+          appearance=list(default="rhs", lhs="Bread"),
+          control=list(verbose=F)) %>%
+  sort(by="confidence", decreasing=TRUE) %>%
+  head(10) %>%
+  inspect(ruleSep = ">>>", itemSep = " + ", setStart = "", setEnd ="") %>% 
+  as.data.frame()
+```
+
+```{r}
+kable(f)
+```
+
+########### Visulalization
+
+```{r, results='hide'}
+plot(teaFreqRules, method="matrix", measure="confidence")
+```
+
+```{r, results='hide'}
+plot(teaFreqRules) 
+```
+
+```{r, results='hide'}
+plot(teaFreqRules, measure=c("support","lift"), shading="confidence")
+```
+
+```{r, results='hide'}
+plot(teaFreqRules, shading="order")
+```
+
+```{r}
+plot(teaFreqRules, method="graph")
+```
+
+# Dissimilarity
+# most are dissimilar - 90%
+
+```{r, Dissimilarity}
+coffeeDiss <- coffee[,itemFrequency(coffee)>0.05] %>%
+  dissimilarity(which="items") %>%
+  round(2) %>%
+  as.matrix()
+```
+
+```{r}
+kable(coffeeDiss)
+```
+
+```{r, eval=FALSE}
+coffeeDiss %>% 
+  melt() %>%
+  ggplot(aes(X1, X2, fill = value)) +
+  geom_tile() + 
+  scale_fill_gradient(low = cBlue,  high = cYellow)
+```
+
+
+
+
+
+
+
+

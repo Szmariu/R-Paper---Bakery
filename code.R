@@ -8,6 +8,7 @@ library(arules)
 library(arulesViz)
 library(arulesCBA)
 library(arulesSequences)
+library(reshape)
 options(scipen=999)
 
 # Nice colors
@@ -81,7 +82,7 @@ inspect(teaFreqRules)
 
 
 ########### Apriori
-teaRules <- tea %>% apriori(list(supp=0.0004, conf=0.3)) %>% filter(Lift < 50)
+teaRules <- tea %>% apriori(list(supp=0.0004, conf=0.3)) 
 
 teaRules %>% 
   sort(by="lift", decreasing=TRUE) %>% 
@@ -148,7 +149,12 @@ plot(teaFreqRules, method="paracoord", control=list(reorder=TRUE))
 ############## Dissimilarity
 
 # most are dissimilar - 90%
-coffee[,itemFrequency(coffee)>0.05] %>%
+g <- coffee[,itemFrequency(coffee)>0.05] %>%
   dissimilarity(which="items") %>%
-  round(2) 
+  round(2) %>%
+  as.matrix() 
 
+
+gm <- melt(g)
+ggplot(gm, aes(X1, X2, fill = value)) + geom_tile() + 
+  scale_fill_gradient(low = cBlue,  high = cYellow)
