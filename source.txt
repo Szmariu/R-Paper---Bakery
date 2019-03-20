@@ -1,0 +1,3 @@
+The dataset is publicly available from the Kaggle website. It contains the Transactions data from a bakery from 30/10/2016 to 09/04/2017. The data belongs to a bakery called "The Bread Basket" that serves coffee, bread, muffin, cookies and so on. It is located in the historic center of Edinburgh.
+
+Source: Kaggle (https://www.kaggle.com/xvivancos/transactions-from-a-bakery)
