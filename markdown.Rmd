@@ -15,7 +15,7 @@ knitr::opts_chunk$set(fig.align='left')
 
 # Introduction
 ## Goal of the paper
-I always wondered how efficient is upselling in coffee shops and bakeries. There always seem to be some kind of promotion to incentivise the customers to buy more products. Thanks to this dataset from [Kaggle](https://www.kaggle.com/xvivancos/transactions-from-a-bakery) (temporary 404) we can analise what product combinations are popular in one particular bakery. 
+I always wondered how efficient is up-selling in coffee shops and bakeries. There always seem to be some kind of promotion to incentivize the customers to buy more products. Thanks to this dataset from [Kaggle](https://www.kaggle.com/xvivancos/transactions-from-a-bakery) (temporary 404) we can analyse what product combinations are popular in one particular bakery. 
 
 # Data preparation
 ## Libraries
@@ -42,7 +42,7 @@ cBlue = '#378CC7'
 
 ## Manipulating data
 
-The data out of the box isn't perfect - we have to remove some transactions, and also make a subset that will be explaned later. Then we save the data back as csv, since the read.transactions() cannot use data frames.    
+The data out of the box isn't perfect - we have to remove some transactions, and also make a subset that will be explained later. Then we save the data back as csv, since the read.transactions() cannot use data frames.    
 
 ```{r, eval=FALSE}
 # Read the data
@@ -62,7 +62,7 @@ dataExportNoCoffee[, c(3:4)] %>% write.csv( './data/transactionsNoCoffee.csv')
 
 ## Loading transactions from csv
 
-Now, we can load the processed data using the read.transactions() function from the arules package. We make to main datasets - one containing all the transactions (coffee) and one skiping the two most popular products, coffee and bread (tea).    
+Now, we can load the processed data using the read.transactions() function from the arules package. We make to main datasets - one containing all the transactions (coffee) and one bypassing the two most popular products, coffee and bread (tea).    
 
 ```{r}
 # Read the data as transactions
@@ -116,7 +116,7 @@ coffee %>% itemFrequencyPlot(topN=15,
                              border = NA) 
 ```
 
-Coffee and bread appear frequently in the transactions - nearly 50% and 30% respectivly. As I discovered later, this can significantly skew the results of basket analisys, so I prepader a second dataset that excluded these two products. 
+Coffee and bread appear frequently in the transactions - nearly 50% and 30% respectively. As I discovered later, this can significantly skew the results of basket analysis, so I prepared a second dataset that excluded these two products. 
 
 ### Without coffee and bread
 
@@ -130,7 +130,7 @@ The number of transactions drops to 6 800, and products to 90.
 image(tea[1000:1100])
 ```
 
-The patterns in the sample are much wekaer now - the analisys should show better results.   
+The patterns in the sample are much weaker now - the analysis should show better results.   
  
 ```{r}
 tea %>% itemFrequencyPlot(topN=15,
@@ -158,7 +158,7 @@ coffeeCount[2,2]
 ```
 
 The data seems to be evenly distributed, there are no obvious outliers. There are a total of 4 528 transactions with coffee, and 3 097 with bread.   
-We can analise the support and lift for the most popular items.   
+We can analyse the support and lift for the most popular items.   
 
 ```{r}
 teaSupport <- tea %>% crossTable(measure="support", sort=TRUE)
@@ -213,7 +213,7 @@ teaFreqItems <- tea %>% eclat(list(supp=0.0003, maxlen=4))
 median(teaFreqItems@quality$count)
 ```
 
-Even thought we cet the support treshold at a low value of 0.3%, the median count of the found rules is 6.   
+Even thought we set the support threshold at a low value of 0.3%, the median count of the found rules is 6.   
 
 Now, we are able to find interesting itemsets using the ruleInduction() function. 
 
@@ -233,11 +233,11 @@ a <- teaFreqRules %>%
 kable(a, digits = 4)
 ```
 
-We found 33 rules. Their suppor is quite low, but the overall confidence is quite decent, at about 50% to 75%. All rules have significant lift, from 2 to even around 20.    
+We found 33 rules. Their support is quite low, but the overall confidence is quite decent, at about 50% to 75%. All rules have significant lift, from 2 to even around 20.    
 
-## Apriori analisys 
+## Apriori analysis 
 
-Association rules minig can also be done using apriori analisys. Arules provides a function for this. The support is set like previously, at a low level of 0.4%. 
+Association rules mining can also be done using apriori analysis. Arules provides a function for this. The support is set like previously, at a low level of 0.4%. 
 
 ```{r, results='hide'}
 b <- tea %>% 
@@ -252,7 +252,7 @@ b <- tea %>%
 kable(b, digits = 4)
 ```
 
-Uncovered rules are simmilar to previous analisys, but there are some differences. The very high lift values of around 50 are all acheived by relations that occur in a very limited number of cases. The one excerption if *Extra Salami or Feta*, which strongly influences *Salad*. 
+Uncovered rules are similar to previous analysis, but there are some differences. The very high lift values of around 50 are all achieved by relations that occur in a very limited number of cases. The one exception if *Extra Salami or Feta*, which strongly influences *Salad*. 
 
 ## LHS
 
@@ -275,7 +275,7 @@ c <- coffee %>%
 kable(c, digits = 4)
 ```
 
-We uncovered some rules with high confidence - most of them consist of typical breakfest items, such as salads, toast or sandwiches. This may be some indication that the cross-selling works well.  
+We uncovered some rules with high confidence - most of them consist of typical breakfast items, such as salads, toast or sandwiches. This may be some indication that the cross-selling works well.  
 
 ### Bread
 
@@ -298,7 +298,7 @@ The results for bread are different - the overall confidence is much lower, and 
 
 ## RHS
 
-To complete the analisys, we can take a look at what items the coffee and bread bring to the typical transaction. 
+To complete the analysis, we can take a look at what items the coffee and bread bring to the typical transaction. 
 
 ### Coffee
 ```{r, results='hide'}
@@ -316,7 +316,7 @@ e <- coffee %>%
 kable(e)
 ```
 
-Confidence is low - judging by lift, it seems that buying coffee signicantly decreases the chance of buing bread and tea. It does increase the chance for cakes, pastry and sandwiches. 
+Confidence is low - judging by lift, it seems that buying coffee significantly decreases the chance of buying bread and tea. It does increase the chance for cakes, pastry and sandwiches. 
 
 ### Bread
 
@@ -335,9 +335,9 @@ f <- coffee %>%
 kable(f)
 ```
 
-Confidence here is also low. Buying bread seems to decrease the chance of buing coffee, tea and cakes. It does increase the chance slightly for pastry. 
+Confidence here is also low. Buying bread seems to decrease the chance of buying coffee, tea and cakes. It does increase the chance slightly for pastry. 
 
-# Visulalization 
+# Visualization 
 
 ```{r, results='hide', message = FALSE, warning = FALSE}
 plot(teaFreqRules) 
@@ -357,17 +357,17 @@ plot(teaFreqRules, method="graph")
 
 Graphing the results gives some new insights - Tea and Juice have by far the most connections. Tea is understandable, since, after removing coffee and bread, it is the most popular item. Juice on the other hand is interesting, because it occurs much less frequently. The high number of connections may be due to the fact that it is a drink.  
 
-Of note is a connction between *Duck Egg* and *Spanish Brunch*, that hase both quite high lift, as well as support. 
+Of note is a connection between *Duck Egg* and *Spanish Brunch*, that has both quite high lift, as well as support. 
 
-# Conslusions 
+# Conclusions 
 
-The results of the analisys are inconclusive. There seems to be some weak evidence that up-selling coffee to customers buing other products works well, while upselling other products to customers buying coffee only decreases the probability.  
+The results of the analysis are inconclusive. There seems to be some weak evidence that up-selling coffee to customers buying other products works well, while up-selling other products to customers buying coffee only decreases the probability.  
 
-Customers like to buy bread in addition to other products, but buing bread seems to decrease the probability of buing other popular items.  
+Customers like to buy bread in addition to other products, but buying bread seems to decrease the probability of buying other popular items.  
 
-After removing coffee and bread from the dataset, we were able to find some interesting relations that could be used to set up some custom upselling promotions, e.g. *buy Victorian Sponge and get tea 50% off*.   
+After removing coffee and bread from the dataset, we were able to find some interesting relations that could be used to set up some custom up-selling promotions, e.g. *buy Victorian Sponge and get tea 50% off*.   
 
-Because the dataset consist of many individual items (> 90), the average support is very low. This could be imporved by manually assigning all items to 5-10 broad categories, and redoing the analisys. The process of categorisation should be ideally consulted with the owners of the bakery, to make sure it align with their business goals. 
+Because the dataset consist of many individual items (> 90), the average support is very low. This could be improved by manually assigning all items to 5-10 broad categories, and redoing the analysis. The process of categorization should be ideally consulted with the owners of the bakery, to make sure it align with their business goals. 
 
 
 
