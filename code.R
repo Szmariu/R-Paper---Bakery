@@ -20,7 +20,7 @@ dataImport <- read.csv('data/BreadBasket_DMS.csv')
 
 # Remove transactions with NONE and Adjustment
 dataExport <- dataImport %>% filter(dataImport$Item != "NONE" & dataImport$Item != "Adjustment")
-dataExportNoCoffee <- dataImport %>% filter(dataImport$Item != "NONE" & dataImport$Item != "Adjustment" & dataImport$Item != "Coffee")
+dataExportNoCoffee <- dataImport %>% filter(dataImport$Item != "NONE" & dataImport$Item != "Adjustment" & dataImport$Item != "Coffee" & dataImport$Item != "Bread")
 
 # Write only the relevant columns
 write.csv(dataExport[, c(3:4)], './data/transactions.csv')
@@ -56,7 +56,6 @@ coffeeCount <- coffee %>% crossTable(measure="count", sort=TRUE)
 coffeeCount[1,1]
 breadCount[1,1]
 
-
 breadSupport <- bread %>% crossTable(measure="support", sort=TRUE)
 breadLift <- bread %>%crossTable(measure="lift", sort=TRUE)
 breadChi <- bread %>% crossTable(measure="chiSquared", sort=TRUE)
@@ -70,17 +69,17 @@ print(breadChi[1:8,1:6], digits = 1)
 ############# Eclat
 
 # Low support still gives items that have at least ~ 8 occurences
-breadFreqItems <- bread %>% eclat(list(supp=0.0003, maxlen=2)) 
+breadFreqItems <- bread %>% eclat(list(supp=0.0003, maxlen=4)) 
 median(breadFreqItems@quality$count)
 
-breadFreqRules<- breadFreqItems %>% ruleInduction(bread, confidence=0.4)
+breadFreqRules <- breadFreqItems %>% ruleInduction(bread, confidence=0.4)
 breadFreqRules
 inspect(breadFreqRules)
 
 
 
 ########### Apriori
-breadRules<-bread %>% apriori(list(supp=0.0005, conf=0.5)) 
+breadRules <- bread %>% apriori(list(supp=0.0004, conf=0.3)) %>% filter(Lift < 50)
 
 breadRules %>% 
   sort(by="lift", decreasing=TRUE) %>% 
@@ -95,8 +94,13 @@ coffee %>%
           appearance=list(default="lhs", rhs="Coffee"),
           control=list(verbose=F)) %>%
   sort(by="confidence", decreasing=TRUE) %>%
-  head(20) %>%
-  inspect()
+  head(15) %>%
+  inspect(ruleSep = ">>>", itemSep = " + ", setStart = "", setEnd ="") 
+
+abcd <- coffee %>% 
+  apriori(list(supp=0.001,conf = 0.10),
+                  appearance=list(default="lhs", rhs="Coffee"),
+                  control=list(verbose=F))
 
 coffee %>% 
   apriori(list(supp=0.001,conf = 0.10),
@@ -104,7 +108,7 @@ coffee %>%
           control=list(verbose=F)) %>%
   sort(by="confidence", decreasing=TRUE) %>%
   head(20) %>%
-  inspect()
+  inspect(ruleSep = ">>>", itemSep = " + ", setStart = "", setEnd ="")
 
 # what people buy when they have coffee
 coffee %>% 
@@ -113,7 +117,7 @@ coffee %>%
           control=list(verbose=F)) %>%
   sort(by="confidence", decreasing=TRUE) %>%
   head(20) %>%
-  inspect()
+  inspect(ruleSep = ">>>", itemSep = " + ", setStart = "", setEnd ="")
 
 coffee %>% 
   apriori(list(supp=0.001,conf = 0.05),
@@ -121,11 +125,35 @@ coffee %>%
           control=list(verbose=F)) %>%
   sort(by="confidence", decreasing=TRUE) %>%
   head(20) %>%
-  inspect()
+  inspect(ruleSep = ">>>", itemSep = " + ", setStart = "", setEnd ="")
 
 ########### Visulalization
 
+# Frequency of items
 coffee %>% itemFrequencyPlot(topN=15, type="absolute", main="Item Absolute Frequency", col = cYellow, border = NA) 
 coffee %>% itemFrequencyPlot(topN=15, type="relative", main="Item Relative Frequency", col = cBlue, border = NA) 
 
+# A sample
+image(coffee[1000:1200])
+image(bread[1000:1200])
 
+plot(breadFreqRules, method="matrix", measure="confidence")
+
+plot(breadFreqRules) 
+plot(breadFreqRules, measure=c("support","lift"), shading="confidence")
+
+plot(breadFreqRules, shading="order", control=list(main="Two-key plot"))
+
+plot(breadFreqRules, method="grouped") # this one has a great potential
+plot(breadFreqRules, method="graph") # this one too
+plot(breadFreqRules, method="graph", control=list(type="items"))
+plot(breadFreqRules, method="paracoord", control=list(reorder=TRUE))
+
+
+
+############## Dissimilarity
+trans.sel<-coffee[,itemFrequency(coffee)>0.04] # selected transactions
+d.jac.i<-dissimilarity(trans.sel, which="items") # Jaccard by default
+
+# most are dissimilar - 90%
+round(d.jac.i,2) 
